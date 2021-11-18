@@ -24,4 +24,4 @@ def login(loginuser:OAuth2PasswordRequestForm = Depends(),db:Session = Depends(g
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,detail="Invalid Credential")
     
     token = create_token({"user_id": user_query.id})
-    return {"token": token, "token_type":"Bearer"}
+    return {"token": token, "token_type":"Bearer","user_id":user_query.id}

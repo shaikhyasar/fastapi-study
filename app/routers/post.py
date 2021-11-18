@@ -7,13 +7,17 @@ from app.database import get_db
 from app.models import Post
 from app.oauth2 import get_current_user
 from app.schemas import CreatePost, ResponsePost
-from typing import List
+from typing import List, Optional
 routers = APIRouter(prefix="/posts",tags=["posts"])
 
 @routers.get("/",status_code=status.HTTP_200_OK,response_model=List[ResponsePost])
-def get_all(db:Session = Depends(get_db),user_id:int = Depends(get_current_user)):
+def get_all(db:Session = Depends(get_db),user_id:int = Depends(get_current_user)
+            ,limit:int = 0,skip:int = 0,search:Optional[str]=""):
 
-    post = db.query(Post).order_by(Post.id).all()
+    if limit == 0:
+        post = db.query(Post).order_by(Post.id).filter(Post.title.contains(search)).offset(skip).all()
+    else:
+        post = db.query(Post).order_by(Post.id).filter(Post.title.contains(search)).limit(limit).offset(skip).all()
 
     if not Post:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="No post is there")
