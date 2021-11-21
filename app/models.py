@@ -22,7 +22,7 @@ class User(Base):
 
     id = Column(Integer,nullable=False,primary_key=True)
     name = Column(String,nullable=True)
-    email = Column(String, nullable=False,unique=True)
+    email = Column(String, nullable=False,unique=True) 
     password = Column(String,nullable=False)
     created_at = Column(TIMESTAMP(timezone=True),server_default=text("now()"))
 
@@ -32,6 +32,8 @@ class Vote(Base):
     user_id = Column(Integer,ForeignKey("users.id",ondelete="CASCADE"),primary_key=True,)
     post_id = Column(Integer,ForeignKey("posts.id",ondelete="CASCADE"),primary_key=True)
 
+    user = relationship("User")
+    post = relationship("Post")
 
     # CREATE TABLE votes (
     #     user_id INTEGER NOT NULL,

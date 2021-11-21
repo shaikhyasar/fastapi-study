@@ -1,10 +1,11 @@
 from fastapi import APIRouter,HTTPException,status
 from fastapi.params import Depends
+from sqlalchemy import func
 from sqlalchemy.orm.session import Session
-from sqlalchemy.sql.functions import user
+from sqlalchemy.sql.functions import func
 from starlette.responses import Response
 from app.database import get_db
-from app.models import Post
+from app.models import Post,Vote
 from app.oauth2 import get_current_user
 from app.schemas import CreatePost, ResponsePost
 from typing import List, Optional
@@ -15,11 +16,17 @@ def get_all(db:Session = Depends(get_db),user_id:int = Depends(get_current_user)
             ,limit:int = 0,skip:int = 0,search:Optional[str]=""):
 
     if limit == 0:
-        post = db.query(Post).order_by(Post.id).filter(Post.title.contains(search)).offset(skip).all()
+        post = db.query(Post,func.count(Vote.post_id).label("Votes")).join(
+            Vote,Post.id == Vote.post_id,isouter=True).group_by(
+            Post.id).order_by(Post.id).filter(Post.title.contains(search)).offset(skip).all()
     else:
-        post = db.query(Post).order_by(Post.id).filter(Post.title.contains(search)).limit(limit).offset(skip).all()
+        post = db.query(Post,func.count(Vote.post_id).label("Votes")).join(
+            Vote,Post.id == Vote.post_id,isouter=True).group_by(
+                Post.id).order_by(Post.id).filter(Post.title.contains(search)).limit(limit).offset(skip).all()
 
-    if not Post:
+        
+
+    if not post:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="No post is there")
 
     return post
@@ -36,11 +43,14 @@ def create_user(posts:CreatePost,db:Session = Depends(get_db),user_id:int = Depe
 
 @routers.get("/{id}",response_model=ResponsePost,status_code=status.HTTP_200_OK)
 def get_single_post(id:int, db:Session = Depends(get_db),user_id:int = Depends(get_current_user)):
-    post = db.query(Post).filter(Post.id == id).first()
+
+    post = db.query(Post,func.count(Vote.post_id).label("Votes")).join(
+                Vote,Post.id == Vote.post_id,isouter=True).filter(Post.id == id).group_by(Post.id)
+
     if not post:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail=f"Post with {id} is not found")
-    
-    return post
+    print(post)
+    return post.first()
 
 @routers.put("/{id}",response_model=ResponsePost,status_code=status.HTTP_200_OK)
 def update_post(id:int,users:CreatePost,db:Session = Depends(get_db),user_id:int = Depends(get_current_user)):

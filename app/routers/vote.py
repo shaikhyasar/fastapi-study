@@ -34,7 +34,7 @@ def vote_post(votes:CreateVote,db:Session= Depends(get_db),user_id:int = Depends
         return {"response":"Successfully voted"}
 
 
-@router.get("/",status_code=status.HTTP_200_OK)
+@router.get("/",status_code=status.HTTP_200_OK,response_model=List[ResponseVote])
 def get_vote(db:Session = Depends(get_db),user_id:int = Depends(get_current_user)):
     vote_query = db.query(Vote).order_by(Vote.user_id).all()
 
